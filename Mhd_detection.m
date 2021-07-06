@@ -1,9 +1,7 @@
 % Load signals from 1T MRI
 [ECGMRI1T01Out,FsECGMRI1T01Out,~]=rdsamp('database/ECGMRI1T01Out' , 1 ) ; 
 [ECGMRI1T01Pro,FsECGMRI1T01Pro,~]=rdsamp('database/ECGMRI1T01Pro' , 1 ) ; 
-[ECGMRI1T01Sup,FsECGMRI1T01Sup,~]=rdsamp('database/ECGMRI1T01Sup' , 1 ) ;
-
-fs = FsECGMRI1T01Out; 
+[ECGMRI1T01Sup,FsECGMRI1T01Sup,~]=rdsamp('database/ECGMRI1T01Sup' , 1 ) ; 
 
 %{
 % Plot the signals
@@ -70,7 +68,6 @@ title('Level 1 Detail Coefficients')
 % Interpolation to bring them to same sample sizes
 f = ceil(size(ECGMRI1T01Sup,1)/size(cd7,1));
 y = interp(cd7,f);
-
 % Cut the final samples 
 y = y(1:size(ECGMRI1T01Sup,1));
 N = size(y,1);
@@ -81,46 +78,97 @@ index = 0;
 
 % Calculate the kurtosis's of the ECG Signal to use as initial threshold
 for i=1:D:N-L
-    X = y(i:i+L); % corrected
+    X = y(i:i+L);
     k = kurtosis(X);
     index = index + 1;
     refThreshold(index) = k;
   
 end
 
-% Calculate the 10 maximum kurtosis's
-maxKurts = zeros(1,10);
-for i=1:10
-    [M,I] = max(refThreshold);
-    maxKurts(i) = M;
-    refThreshold(I) = [];
+max = 0;
+maximums = zeros(1,size(refThreshold,2));
+index = 1;
+for i=1:size(refThreshold,2)
+    if refThreshold(i)>max
+        max = refThreshold(i);
+        maximums(index) = max;
+        index = index + 1;
+    end
+    
+    
+    
 end
 
+maximums = nonzeros(maximums);
+
+% 10 last maximums
+lastMaximums = maximums(end-10+1:end);
+
+
 % Initial threshold is the mean of the 10 maximum kurtosis's
-%Sto paper leei the 10 last maximum mipws ennoei kati allo ? kai oxi ta megalytera %
-threshold = mean(maxKurts);
+
+threshold = median(lastMaximums);
 rpeaks = zeros(1,ceil((N-L)/D));
 index = 1;
-
-for i=1:D:N-L
+i = 1;
+while i <= N-L
     X = y(i:i+L);
     k = kurtosis(X);
     
-    if k >= threshold
+    if k >= threshold*0.05
         rpeaks(index) = i;
         index = index + 1;
-        threshold = k;
-        % Ayto to update to i den ginetai ston kwdika na peirasw mesa to i
-        %i = i + 0.2*FsECGMRI1T01Out;
-        %continue;
-    end
         
+        temp = lastMaximums;
+        lastMaximums(10) = 0;
+        for j=2:10
+            lastMaximums(j)=temp(j-1);
+        end
+        lastMaximums(1) = k;
+        
+        threshold = median(lastMaximums);
+        
+        i = i + ceil(0.2*FsECGMRI1T01Out);
+        continue;
+    end
+     
+    i = i + D;
 end
 
 % Results
-rpeaks
+rpeaks = nonzeros(rpeaks);
+
+RpeakMRI1T01Out = rdann('database/ECGMRI1T01Out', 'qrs');
+originalpeaks = RpeakMRI1T01Out;
+success = 0;
+
+for i=1:length(rpeaks)
+    min = 10000000;
+    for j=1:length(RpeakMRI1T01Out)
+        minDist = abs(rpeaks(i)- RpeakMRI1T01Out(j));
+        if minDist < min
+            min = minDist;
+            index = j;
+        end
+        
+    end
+    
+    if length(RpeakMRI1T01Out) == 0
+        break;
+    end
+    
+    if (abs(rpeaks(i)-RpeakMRI1T01Out(index)))<150
+        success = success + 1;
+        RpeakMRI1T01Out(index) = [];
+    end
+    
+    
+    
+    
+end
 
 
+metric = (success/length(originalpeaks))*100;
 
 
 
