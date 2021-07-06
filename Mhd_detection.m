@@ -85,6 +85,7 @@ for i=1:D:N-L
   
 end
 
+% Search for max
 max = 0;
 maximums = zeros(1,size(refThreshold,2));
 index = 1;
@@ -94,14 +95,12 @@ for i=1:size(refThreshold,2)
         maximums(index) = max;
         index = index + 1;
     end
-    
-    
-    
+   
 end
 
 maximums = nonzeros(maximums);
 
-% 10 last maximums
+% Keep the 10 last maximums while searching for the global max
 lastMaximums = maximums(end-10+1:end);
 
 
@@ -115,10 +114,13 @@ while i <= N-L
     X = y(i:i+L);
     k = kurtosis(X);
     
-    if k >= threshold*0.05
+    % Magic Number factor Krug
+    factor = 0.05;
+    if k >= threshold*factor
         rpeaks(index) = i;
         index = index + 1;
         
+        % Ad-Hoc implementation of queue (FIFO)
         temp = lastMaximums;
         lastMaximums(10) = 0;
         for j=2:10
@@ -141,7 +143,7 @@ rpeaks = nonzeros(rpeaks);
 RpeakMRI1T01Out = rdann('database/ECGMRI1T01Out', 'qrs');
 originalpeaks = RpeakMRI1T01Out;
 success = 0;
-
+% Metric -> Searching for the peaks that were found with a tolerance
 for i=1:length(rpeaks)
     min = 10000000;
     for j=1:length(RpeakMRI1T01Out)
@@ -157,6 +159,7 @@ for i=1:length(rpeaks)
         break;
     end
     
+    %tolerance
     if (abs(rpeaks(i)-RpeakMRI1T01Out(index)))<150
         success = success + 1;
         RpeakMRI1T01Out(index) = [];
@@ -167,7 +170,7 @@ for i=1:length(rpeaks)
     
 end
 
-
+% A better one needed
 metric = (success/length(originalpeaks))*100;
 
 
