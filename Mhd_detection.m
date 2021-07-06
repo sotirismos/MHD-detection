@@ -1,7 +1,9 @@
 % Load signals from 1T MRI
 [ECGMRI1T01Out,FsECGMRI1T01Out,~]=rdsamp('database/ECGMRI1T01Out' , 1 ) ; 
 [ECGMRI1T01Pro,FsECGMRI1T01Pro,~]=rdsamp('database/ECGMRI1T01Pro' , 1 ) ; 
-[ECGMRI1T01Sup,FsECGMRI1T01Sup,~]=rdsamp('database/ECGMRI1T01Sup' , 1 ) ; 
+[ECGMRI1T01Sup,FsECGMRI1T01Sup,~]=rdsamp('database/ECGMRI1T01Sup' , 1 ) ;
+
+fs = FsECGMRI1T01Out; 
 
 %{
 % Plot the signals
@@ -68,6 +70,7 @@ title('Level 1 Detail Coefficients')
 % Interpolation to bring them to same sample sizes
 f = ceil(size(ECGMRI1T01Sup,1)/size(cd7,1));
 y = interp(cd7,f);
+
 % Cut the final samples 
 y = y(1:size(ECGMRI1T01Sup,1));
 N = size(y,1);
@@ -78,7 +81,7 @@ index = 0;
 
 % Calculate the kurtosis's of the ECG Signal to use as initial threshold
 for i=1:D:N-L
-    X = ECGMRI1T01Sup(i:i+L);
+    X = y(i:i+L); % corrected
     k = kurtosis(X);
     index = index + 1;
     refThreshold(index) = k;
