@@ -65,12 +65,14 @@ plot(cd1)
 title('Level 1 Detail Coefficients')
 %}
 
+%%---------- Dokimes kai me recontruct kai inverse -----------%%%%
 % Interpolation to bring them to same sample sizes
 %cd7 = idwt([],cd7,'bior1.5');
-f = ceil(size(ECGMRI1T01Sup,1)/size(cd7,1));
-y = interp(cd7,f);
+y = wrcoef('d',c,l,'bior1.5',7);
+%f = ceil(size(ECGMRI1T01Sup,1)/size(cd7,1));
+%y = interp(cd7,f);
 % Cut the final samples 
-y = y(1:size(ECGMRI1T01Sup,1));
+%y = y(1:size(ECGMRI1T01Sup,1));
 N = size(y,1);
 L = floor(0.02*FsECGMRI1T01Out);
 D = L/4;
@@ -102,8 +104,9 @@ end
 maximums = nonzeros(maximums);
 
 % Keep the 10 last maximums while searching for the global max
-lastMaximums = maximums(end-10+1:end);
-
+%lastMaximums = maximums(end-10+1:end);
+% Exei mono 8 opote ta krataw etsi
+lastMaximums = maximums;
 
 % Initial threshold is the mean of the 10 maximum kurtosis's
 
@@ -116,15 +119,15 @@ while i <= N-L
     k = kurtosis(X);
     
     % Magic Number factor Krug
-    factor = 0.05;
+    factor = 0.75;
     if k >= threshold*factor
         rpeaks(index) = i;
         index = index + 1;
         
         % Ad-Hoc implementation of queue (FIFO)
         temp = lastMaximums;
-        lastMaximums(10) = 0;
-        for j=2:10
+        lastMaximums(8) = 0;
+        for j=2:8
             lastMaximums(j)=temp(j-1);
         end
         lastMaximums(1) = k;
