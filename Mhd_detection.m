@@ -66,6 +66,7 @@ title('Level 1 Detail Coefficients')
 %}
 
 % Interpolation to bring them to same sample sizes
+%cd7 = idwt([],cd7,'bior1.5');
 f = ceil(size(ECGMRI1T01Sup,1)/size(cd7,1));
 y = interp(cd7,f);
 % Cut the final samples 
@@ -143,6 +144,7 @@ rpeaks = nonzeros(rpeaks);
 RpeakMRI1T01Out = rdann('database/ECGMRI1T01Out', 'qrs');
 originalpeaks = RpeakMRI1T01Out;
 success = 0;
+failure = 0;
 % Metric -> Searching for the peaks that were found with a tolerance
 for i=1:length(rpeaks)
     min = 10000000;
@@ -163,6 +165,8 @@ for i=1:length(rpeaks)
     if (abs(rpeaks(i)-RpeakMRI1T01Out(index)))<150
         success = success + 1;
         RpeakMRI1T01Out(index) = [];
+    else
+        failure = failure + 1;
     end
     
     
@@ -171,7 +175,7 @@ for i=1:length(rpeaks)
 end
 
 % A better one needed
-metric = (success/length(originalpeaks))*100;
+metric = (success/(success+failure))*100;
 
 
 
