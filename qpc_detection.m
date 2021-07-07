@@ -1,38 +1,45 @@
 function [] = qpc_detection(signal,fs)
 
-% Estimate power spectrum using dsp.SpectrumEstimator 
+signal = detrend(signal,14); % Remove the 14th degree polyonomial trend (removes peak at 0 Hz)
 
-SE = dsp.SpectrumEstimator;
-C2=SE(signal);
-n1=length(C2);
-x=(0:n1-1)*(fs/n1);
-y=C2;
-plot(x,y);
-xlabel('Frequency (Hz)')
-ylabel('Power')
-set(gca,'ylim',[0 0.8])
-set(gca,'xlim',[0 20])
+% Estimate power spectrum using basic spectral analysis
 
-% Estimate bispectrum using Indirect method and Parzen as our window
-
-K=128;
-M=ceil(length(signal)/K);
-L=64;
+fftsignal = (fft(signal));
+n = length(fftsignal);   % number of samples
+f = (0:n-1)*fs/n;  % frequency range
+power = abs(fftsignal).^2/n;  % power of the DFT
+power = (power/max(power)); % To normalize the values
 
 figure;
-bispeci(y,L,M,0,'unbiased',128); % Parzen window,check others parameters as well, HOSA, check for fftlength(256)
-
-hline1 = refline(0, 0); % Bispectrum symmetries
-hline1.Color = 'k';
-hline2 = refline(-1, 0.5);
-hline2.Color = 'k';
-hline3 = refline(1, 0);
-hline3.Color = 'k';
+plot(f,power)
+xlabel('Frequency')
+ylabel('Power')
+set(gca,'ylim',[0 2])
+set(gca,'xlim',[0 20])
 
 
+% Estimate bispectrum using direct method 
 
+K = 64; 
+M = ceil(length(signal)/K);
+z = zeros( K*M - (length(signal)),1); % I need to do this, in order to reshape the signal into a K*M matrix
+signal = [signal ; z];
 
+Y = reshape(signal,M,K);
+
+Nfft = 128;
+figure;
+[bspec,waxis] = bispecd(Y,Nfft,0,K);
+waxis1 = waxis*fs;
+figure;
+contour(waxis1,waxis1,abs(bspec));
+set(gca,'ylim',[-20 20])
+set(gca,'xlim',[-20 20])
+grid on
+title('bispectrum')
+xlabel('f1'),ylabel('f2')
 
 end
+
 
 
