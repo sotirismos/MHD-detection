@@ -20,27 +20,27 @@ set(gca,'xlim',[0 20])
 
 % Estimate bispectrum using direct method 
 
-K = 64; 
-M = ceil(length(signal)/K);
-z = zeros( K*M - (length(signal)),1); % I need to do this, in order to reshape the signal into a K*M matrix
-signal = [signal ; z];
+M = 1024; 
+K = floor(length(signal)/M);
+signal = signal(1:(K*M));
 
 Y = reshape(signal,M,K);
 
-Nfft = 128;
+Nfft = 512; % It will go up to 1024 inside the bispecd function
 
-figure;
-[bspec,waxis] = bispecd(Y,Nfft,0,K);
+% Bispectrum
+
+[bspec,waxis] = bispecd(Y,Nfft,1,M,0);
 SS = Nfft/2+1;
 waxis1 = waxis(SS:end)*fs;
-figure;
+figure
 subplot(121)
 bspec1 = bspec(SS:end,SS:end);
 contour(waxis1,waxis1,abs(bspec1),10);
+grid on
 set(gca,'ylim',[-20 20])
 set(gca,'xlim',[-20 20])
-grid on
-title('Bispectrum')
+title('bispectrum')
 xlabel('f1'),ylabel('f2')
 
 % Bispectrum symmetries
@@ -58,20 +58,30 @@ mesh(X1,Y1,abs(bspec1))
 axis tight;
 set(gca,'ylim',[-20 20])
 set(gca,'xlim',[-20 20])
-title('Bispectrum')
 ylabel('f1')
 ylabel('f2')
 zlabel('range')
+title('bispectrum')
 
-% Bispectrum symmetries
 
-hline1 = refline(0, 0); 
-hline1.Color = 'k';
-hline2 = refline(-1, 0.5);
-hline2.Color = 'k';
-hline3 = refline(1, 0);
-hline3.Color = 'k';
+% Frequency ranges do not match with bispectrum
 
+[co_bis,co_waxis] = bicoher(Y,Nfft,1,M,0);
+waxis2 = co_waxis(SS:end)*fs;
+figure()
+subplot(121)
+contour(waxis2,waxis2,abs(co_bis(SS:end,SS:end)),4);
+grid on
+title('coherent bispectrum')
+xlabel('f1'),ylabel('f2')
+subplot(122)
+
+mesh(X1,Y1,abs(co_bis(SS:end,SS:end)));
+axis tight
+xlabel('f1')
+ylabel('f2')
+zlabel('range')
+title('coherent bispectrum')
 
 end
 
